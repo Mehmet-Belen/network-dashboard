@@ -12,7 +12,7 @@ CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Demo modu toggle — True ise sahte veri karıştırır
-DEMO_MODE = True
+DEMO_MODE = False
 
 def demo_stats():
     """Görsel olarak hareketli sahte veri."""
