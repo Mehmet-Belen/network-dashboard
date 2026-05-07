@@ -6,6 +6,7 @@ from influxdb_client import InfluxDBClient, Point
 from influxdb_client.client.write_api import ASYNCHRONOUS
 import os
 from dotenv import load_dotenv
+from ping3 import ping
 
 load_dotenv(override=True)
 
@@ -191,6 +192,37 @@ def compute_stats():
 
         print(f"[{time.strftime('%H:%M:%S')}] {bandwidth:.4f} Mbps | {pps} pkt/s")
 
+def health_monitor():
+    """Arka planda saniyede bir 8.8.8.8'e ping atarak ağın sağlığını ölçer."""
+    while True:
+        try:
+            # 8.8.8.8'e ping at (Zaman aşımı 1 saniye, ms cinsinden döndür)
+            delay = ping('8.8.8.8', timeout=1, unit='ms')
+            
+            if delay is None or delay is False:
+                # Ping gitmediyse (Paket yolda düştü veya internet koptu)
+                rtt = 0.0
+                loss = 1
+                status = "Disconnected"
+            else:
+                # Ping başarılı, yollar kaymak gibi
+                rtt = round(delay, 2)
+                loss = 0
+                status = "Connected"
+                
+            # InfluxDB'ye sağlık raporunu ateşliyoruz!
+            health_point = Point("network_health") \
+                .tag("target", "8.8.8.8") \
+                .tag("status", status) \
+                .field("rtt_ms", rtt) \
+                .field("packet_loss", loss)
+                
+            write_api.write(bucket=bucket, record=health_point)
+            
+        except Exception as e:
+            print(f"Ping Monitörü Hatası: {e}")
+            
+        time.sleep(1) # Saniyede 1 kez nabız yokla
 
 def get_stats():
     """app.py buradan okuyacak."""
@@ -223,6 +255,9 @@ def get_active_interface():
 def start_capture(interface=None):
     stats_thread = threading.Thread(target=compute_stats, daemon=True)
     stats_thread.start()
+
+    health_thread = threading.Thread(target=health_monitor, daemon=True)
+    health_thread.start()
 
     if interface is None:
         interface = get_active_interface()
