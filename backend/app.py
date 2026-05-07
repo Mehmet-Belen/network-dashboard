@@ -6,6 +6,9 @@ import time
 import random
 from anomaly import check_anomalies
 from capture import get_stats, start_capture
+import logging
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.ERROR) # Sadece kritik hataları göster, GET/POST kalabalığını gizle!
 
 app = Flask(__name__)
 CORS(app)

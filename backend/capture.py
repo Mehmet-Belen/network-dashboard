@@ -47,14 +47,38 @@ def process_packet(packet):
         print(f"🔥 KANIT YAKALANDI: İşletim sistemi paketleri birleştirdi. Boyut: {size} Byte")
 
     src_ip = packet[IP].src
+    dst_ip = packet[IP].dst  # YENİ: Alıcı IP adresi
 
     proto_name = "Other"
-    if packet.haslayer(TCP):   proto_name = "TCP"
-    elif packet.haslayer(UDP): proto_name = "UDP"
-    elif packet.haslayer(ICMP):proto_name = "ICMP"
+    src_port = "0"           # YENİ: Kaynak Port
+    dst_port = "0"           # YENİ: Hedef Port
+    service = "Other"        # YENİ: Tespit edilen servis (HTTP, HTTPS vs)
+
+    # Protokol ve Port Tespiti
+    if packet.haslayer(TCP): 
+        proto_name = "TCP"
+        src_port = str(packet[TCP].sport)
+        dst_port = str(packet[TCP].dport)
+    elif packet.haslayer(UDP): 
+        proto_name = "UDP"
+        src_port = str(packet[UDP].sport)
+        dst_port = str(packet[UDP].dport)
+    elif packet.haslayer(ICMP):
+        proto_name = "ICMP"
+
+    # Portlardan Servis Tahmini (Deep Packet Inspection Lite)
+    if dst_port == "443" or src_port == "443":
+        service = "HTTPS"
+    elif dst_port == "80" or src_port == "80":
+        service = "HTTP"
+    elif dst_port == "53" or src_port == "53":
+        service = "DNS"
+    elif proto_name in ["TCP", "UDP"]:
+        service = f"Unknown (Port {dst_port})"
 
     with lock:
-        packet_window.append((now, size, proto_name, src_ip))
+        # DİKKAT: RAM'e kaydettiğimiz paketin içine yeni verileri de ekledik!
+        packet_window.append((now, size, proto_name, src_ip, dst_ip, src_port, dst_port, service))
         ip_bytes[src_ip] += size
 
 
@@ -83,7 +107,6 @@ def compute_stats():
                 "protocols": {"TCP": 0, "UDP": 0, "ICMP": 0, "Other": 0},
                 "top_talkers": []
             }
-            # Sıfır değerini de yaz — grafikte boşluk kalmasın
             try:
                 write_api.write(
                     bucket=bucket,
@@ -105,21 +128,31 @@ def compute_stats():
         aggregated_traffic = defaultdict(lambda: {"bytes": 0, "packets": 0})
 
         for p in packets:
-            _, size, proto_name, src_ip = p
-            aggregated_traffic[(src_ip, proto_name)]["bytes"]   += size
-            aggregated_traffic[(src_ip, proto_name)]["packets"] += 1
+            # 8 YOLCUYU BİRDEN İNDİRİYORUZ
+            _, size, proto_name, src_ip, dst_ip, src_port, dst_port, service = p
+            
+            # GRUPLAMA ANAHTARINA 6 VERİYİ DE ÇAKIYORUZ
+            group_key = (src_ip, dst_ip, proto_name, src_port, dst_port, service)
+            aggregated_traffic[group_key]["bytes"]   += size
+            aggregated_traffic[group_key]["packets"] += 1
 
-        for (src_ip, proto_name), data in aggregated_traffic.items():
+        # İŞTE PATLAYAN SATIR BURASIYDI, TAMAMEN DEĞİŞTİRDİK:
+        for key, data in aggregated_traffic.items():
+            src_ip, dst_ip, proto_name, src_port, dst_port, service = key
+            
             influx_points.append(
                 Point("network_traffic")
                     .tag("protocol",  proto_name)
                     .tag("source_ip", src_ip)
+                    .tag("dest_ip", dst_ip)
+                    .tag("src_port", src_port)
+                    .tag("dst_port", dst_port)
+                    .tag("service", service)
                     .field("bytes",        data["bytes"])
                     .field("packet_count", data["packets"])
             )
 
-        # ── ✅ YENİ: Toplam bant genişliği özet noktası ───────────────────────
-        # Grafana bu tek seriyi çizerek doğru Mbps grafiği üretir.
+        # ── Toplam bant genişliği özet noktası ───────────────────────
         influx_points.append(
             Point("network_summary")
                 .field("bandwidth_mbps",    bandwidth)
