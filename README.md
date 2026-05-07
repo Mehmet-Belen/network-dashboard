@@ -28,9 +28,15 @@ Gerçek zamanlı ağ trafiğini yakalayıp analiz eden ve web tabanlı bir dashb
 
 ```bash
 cd backend
-python -m venv venv
+python -m venv venv # bir kez yapmak yeterli
 venv\Scripts\activate      # Windows
-pip install -r requirements.txt
+pip install -r requirements.txt # bir kez yapmak yeterli
+python capture.py              # Yönetici yetkisi gerekebilir
+```
+
+```bash
+cd backend
+venv\Scripts\activate      # Windows
 python app.py              # Yönetici yetkisi gerekebilir
 ```
 
@@ -38,7 +44,7 @@ python app.py              # Yönetici yetkisi gerekebilir
 
 ```bash
 cd frontend
-npm install
+npm install # bir kez
 npm start
 ```
 
