@@ -3,21 +3,10 @@
   "kind": "Dashboard",
   "metadata": {
     "name": "adctqdv",
-    "namespace": "default",
-    "uid": "a6f15198-d7b9-476a-a212-dad8b3e0d480",
-    "resourceVersion": "1778235579603003",
-    "generation": 36,
+    "generation": 48,
     "creationTimestamp": "2026-05-06T19:43:09Z",
-    "labels": {
-      "grafana.app/deprecatedInternalID": "2964768972824576"
-    },
-    "annotations": {
-      "grafana.app/createdBy": "user:afl5rtk2gf20wc",
-      "grafana.app/folder": "",
-      "grafana.app/saved-from-ui": "Grafana v13.0.1 (a100054f)",
-      "grafana.app/updatedBy": "user:afl5rtk2gf20wc",
-      "grafana.app/updatedTimestamp": "2026-05-08T10:19:39Z"
-    }
+    "labels": {},
+    "annotations": {}
   },
   "spec": {
     "annotations": [
@@ -28,10 +17,10 @@
             "kind": "DataQuery",
             "group": "grafana",
             "version": "v0",
-            "datasource": {
-              "name": "-- Grafana --"
-            },
-            "spec": {}
+            "spec": {},
+            "labels": {
+              "grafana.app/export-label": "grafana-1"
+            }
           },
           "enable": true,
           "hide": true,
@@ -62,11 +51,11 @@
                       "kind": "DataQuery",
                       "group": "influxdb",
                       "version": "v0",
-                      "datasource": {
-                        "name": "cfl5w3wufqww0b"
-                      },
                       "spec": {
                         "query": "from(bucket: \"network_stats\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r._measurement == \"network_summary\" and r._field == \"bandwidth_mbps\")"
+                      },
+                      "labels": {
+                        "grafana.app/export-label": "influxdb-1"
                       }
                     },
                     "refId": "A",
@@ -171,11 +160,11 @@
           }
         }
       },
-      "panel-2": {
+      "panel-10": {
         "kind": "Panel",
         "spec": {
-          "id": 2,
-          "title": "Momentary Throughput ",
+          "id": 10,
+          "title": "Top Talkers",
           "description": "",
           "links": [],
           "data": {
@@ -189,11 +178,315 @@
                       "kind": "DataQuery",
                       "group": "influxdb",
                       "version": "v0",
-                      "datasource": {
-                        "name": "cfl5w3wufqww0b"
+                      "spec": {
+                        "query": "from(bucket: \"network_stats\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"network_traffic\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"bytes\")\r\n  |> group(columns: [\"dest_ip\", \"dst_port\", \"service\"])\r\n  |> sum()\r\n  |> top(n: 10, columns: [\"_value\"])\r\n  |> yield(name: \"top_talkers\")"
                       },
+                      "labels": {
+                        "grafana.app/export-label": "influxdb-1"
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "bargauge",
+            "version": "13.0.1",
+            "spec": {
+              "options": {
+                "displayMode": "lcd",
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": false
+                },
+                "maxVizHeight": 300,
+                "minVizHeight": 16,
+                "minVizWidth": 8,
+                "namePlacement": "auto",
+                "orientation": "horizontal",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showUnfilled": true,
+                "sizing": "auto",
+                "valueMode": "color"
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "displayName": "${__field.labels.dest_ip} : ${__field.labels.dst_port} (${__field.labels.service})",
+                  "unit": "decbytes",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      },
+                      {
+                        "value": 100000,
+                        "color": "yellow"
+                      },
+                      {
+                        "value": 500000,
+                        "color": "orange"
+                      },
+                      {
+                        "value": 5000000,
+                        "color": "red"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "thresholds"
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-11": {
+        "kind": "Panel",
+        "spec": {
+          "id": 11,
+          "title": "Bandwidth",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "influxdb",
+                      "version": "v0",
+                      "spec": {
+                        "query": "from(bucket: \"network_stats\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"network_summary\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"bandwidth_mbps\")\r\n  |> last()\r\n  |> yield(name: \"bant_genisligi\")"
+                      },
+                      "labels": {
+                        "grafana.app/export-label": "influxdb-1"
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "gauge",
+            "version": "13.0.1",
+            "spec": {
+              "options": {
+                "barShape": "flat",
+                "barWidthFactor": 0.5,
+                "effects": {
+                  "barGlow": false,
+                  "centerGlow": false,
+                  "gradient": true
+                },
+                "endpointMarker": "point",
+                "minVizHeight": 75,
+                "minVizWidth": 75,
+                "orientation": "auto",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "segmentCount": 1,
+                "segmentSpacing": 0.3,
+                "shape": "gauge",
+                "showThresholdLabels": false,
+                "showThresholdMarkers": true,
+                "sizing": "auto",
+                "sparkline": true,
+                "textMode": "auto"
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "Mbits",
+                  "min": 0,
+                  "max": 100,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      },
+                      {
+                        "value": 30,
+                        "color": "yellow"
+                      },
+                      {
+                        "value": 60,
+                        "color": "orange"
+                      },
+                      {
+                        "value": 100,
+                        "color": "red"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "thresholds"
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-12": {
+        "kind": "Panel",
+        "spec": {
+          "id": 12,
+          "title": "PPS",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "influxdb",
+                      "version": "v0",
+                      "spec": {
+                        "query": "from(bucket: \"network_stats\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"network_summary\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"packets_per_second\")\r\n  |> last()\r\n  |> yield(name: \"bant_genisligi\")"
+                      },
+                      "labels": {
+                        "grafana.app/export-label": "influxdb-1"
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "gauge",
+            "version": "13.0.1",
+            "spec": {
+              "options": {
+                "barShape": "flat",
+                "barWidthFactor": 0.5,
+                "effects": {
+                  "barGlow": false,
+                  "centerGlow": false,
+                  "gradient": true
+                },
+                "endpointMarker": "point",
+                "minVizHeight": 75,
+                "minVizWidth": 75,
+                "orientation": "auto",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "segmentCount": 1,
+                "segmentSpacing": 0.3,
+                "shape": "gauge",
+                "showThresholdLabels": false,
+                "showThresholdMarkers": true,
+                "sizing": "auto",
+                "sparkline": true,
+                "textMode": "auto"
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "pps",
+                  "min": 0,
+                  "max": 10000,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      },
+                      {
+                        "value": 1000,
+                        "color": "yellow"
+                      },
+                      {
+                        "value": 4000,
+                        "color": "orange"
+                      },
+                      {
+                        "value": 7000,
+                        "color": "red"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "thresholds"
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-2": {
+        "kind": "Panel",
+        "spec": {
+          "id": 2,
+          "title": "Throughput ",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "influxdb",
+                      "version": "v0",
                       "spec": {
                         "query": "from(bucket: \"network_stats\")\r\n  |> range(start: -5s)\r\n  |> filter(fn: (r) => r._measurement == \"network_summary\" and r._field == \"bandwidth_mbps\")\r\n  |> filter(fn: (r) => r._value > 0.0)\r\n  |> mean()"
+                      },
+                      "labels": {
+                        "grafana.app/export-label": "influxdb-1"
                       }
                     },
                     "refId": "A",
@@ -279,11 +572,11 @@
                       "kind": "DataQuery",
                       "group": "influxdb",
                       "version": "v0",
-                      "datasource": {
-                        "name": "cfl5w3wufqww0b"
-                      },
                       "spec": {
                         "query": "from(bucket: \"network_stats\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r._measurement == \"network_summary\" and r._field == \"packets_per_second\")\r\n  |> mean()"
+                      },
+                      "labels": {
+                        "grafana.app/export-label": "influxdb-1"
                       }
                     },
                     "refId": "A",
@@ -319,7 +612,7 @@
               },
               "fieldConfig": {
                 "defaults": {
-                  "unit": "pps",
+                  "unit": "p",
                   "thresholds": {
                     "mode": "absolute",
                     "steps": [
@@ -361,11 +654,11 @@
                       "kind": "DataQuery",
                       "group": "influxdb",
                       "version": "v0",
-                      "datasource": {
-                        "name": "cfl5w3wufqww0b"
-                      },
                       "spec": {
                         "query": "from(bucket: \"network_stats\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r._measurement == \"network_traffic\")\r\n  |> filter(fn: (r) => r._field == \"bytes\")\r\n  |> group(columns: [\"protocol\"])\r\n  |> sum()"
+                      },
+                      "labels": {
+                        "grafana.app/export-label": "influxdb-1"
                       }
                     },
                     "refId": "A",
@@ -448,11 +741,11 @@
                       "kind": "DataQuery",
                       "group": "influxdb",
                       "version": "v0",
-                      "datasource": {
-                        "name": "cfl5w3wufqww0b"
-                      },
                       "spec": {
                         "query": "from(bucket: \"network_stats\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"network_traffic\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"bytes\")\r\n  |> group(columns: [\"source_ip\", \"dest_ip\"]) // Kim kiminle konuşuyor ayır\r\n  |> sum() // Toplam sömürdükleri veriyi hesapla\r\n  |> group() // Sıralama yapabilmek için tabloyu tek parça yap\r\n  |> sort(columns: [\"_value\"], desc: true) // En çoktan en aza sırala\r\n  |> limit(n: 10) // Sadece en çok veri yiyen ilk 10 kişiyi göster"
+                      },
+                      "labels": {
+                        "grafana.app/export-label": "influxdb-1"
                       }
                     },
                     "refId": "A",
@@ -551,11 +844,11 @@
                       "kind": "DataQuery",
                       "group": "influxdb",
                       "version": "v0",
-                      "datasource": {
-                        "name": "cfl5w3wufqww0b"
-                      },
                       "spec": {
                         "query": "from(bucket: \"network_stats\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"network_traffic\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"bytes\")\r\n  |> group(columns: [\"service\"])\r\n  |> sum()\r\n  |> sort(columns: [\"_value\"], desc: true) // YENİ: En çoktan en aza sırala!"
+                      },
+                      "labels": {
+                        "grafana.app/export-label": "influxdb-1"
                       }
                     },
                     "refId": "A",
@@ -641,11 +934,11 @@
                       "kind": "DataQuery",
                       "group": "influxdb",
                       "version": "v0",
-                      "datasource": {
-                        "name": "cfl5w3wufqww0b"
-                      },
                       "spec": {
                         "query": "from(bucket: \"network_stats\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"network_health\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"rtt_ms\")"
+                      },
+                      "labels": {
+                        "grafana.app/export-label": "influxdb-1"
                       }
                     },
                     "refId": "A",
@@ -738,6 +1031,208 @@
             }
           }
         }
+      },
+      "panel-8": {
+        "kind": "Panel",
+        "spec": {
+          "id": 8,
+          "title": "Packet Loss",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "influxdb",
+                      "version": "v0",
+                      "spec": {
+                        "query": "from(bucket: \"network_stats\") \r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"network_health\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"packet_loss\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: max, createEmpty: false)\r\n  |> yield(name: \"paket_kaybi\")"
+                      },
+                      "labels": {
+                        "grafana.app/export-label": "influxdb-1"
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "13.0.1",
+            "spec": {
+              "options": {
+                "annotations": {
+                  "clustering": -1,
+                  "multiLane": false
+                },
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "single",
+                  "sort": "none"
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "min": 0,
+                  "max": 1,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      },
+                      {
+                        "value": 1,
+                        "color": "red"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.3,
+                    "drawStyle": "points",
+                    "fillOpacity": 100,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "stepAfter",
+                    "lineWidth": 1,
+                    "pointSize": 10,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "auto",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-9": {
+        "kind": "Panel",
+        "spec": {
+          "id": 9,
+          "title": "Service Distribution",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "influxdb",
+                      "version": "v0",
+                      "spec": {
+                        "query": "from(bucket: \"network_stats\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"network_traffic\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"bytes\")\r\n  |> group(columns: [\"service\"])\r\n  |> sum()\r\n  |> yield(name: \"toplam_veri\")"
+                      },
+                      "labels": {
+                        "grafana.app/export-label": "influxdb-1"
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "piechart",
+            "version": "13.0.1",
+            "spec": {
+              "options": {
+                "displayLabels": [
+                  "name",
+                  "percent"
+                ],
+                "legend": {
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "pieType": "donut",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "sort": "desc",
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "single",
+                  "sort": "none"
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "displayName": "${__field.labels.service}",
+                  "unit": "bytes",
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    }
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
       }
     },
     "layout": {
@@ -758,8 +1253,8 @@
                       "spec": {
                         "x": 0,
                         "y": 0,
-                        "width": 12,
-                        "height": 8,
+                        "width": 10,
+                        "height": 7,
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-1"
@@ -769,36 +1264,23 @@
                     {
                       "kind": "GridLayoutItem",
                       "spec": {
-                        "x": 12,
+                        "x": 10,
                         "y": 0,
-                        "width": 12,
-                        "height": 8,
+                        "width": 3,
+                        "height": 4,
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-6"
+                          "name": "panel-11"
                         }
                       }
                     },
                     {
                       "kind": "GridLayoutItem",
                       "spec": {
-                        "x": 0,
-                        "y": 8,
-                        "width": 12,
-                        "height": 8,
-                        "element": {
-                          "kind": "ElementReference",
-                          "name": "panel-5"
-                        }
-                      }
-                    },
-                    {
-                      "kind": "GridLayoutItem",
-                      "spec": {
-                        "x": 12,
-                        "y": 8,
-                        "width": 12,
-                        "height": 8,
+                        "x": 13,
+                        "y": 0,
+                        "width": 4,
+                        "height": 7,
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-4"
@@ -808,10 +1290,75 @@
                     {
                       "kind": "GridLayoutItem",
                       "spec": {
+                        "x": 17,
+                        "y": 0,
+                        "width": 7,
+                        "height": 7,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-7"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 10,
+                        "y": 4,
+                        "width": 3,
+                        "height": 4,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-12"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
                         "x": 0,
-                        "y": 16,
-                        "width": 12,
-                        "height": 8,
+                        "y": 7,
+                        "width": 10,
+                        "height": 7,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-6"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 13,
+                        "y": 7,
+                        "width": 4,
+                        "height": 7,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-9"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 17,
+                        "y": 7,
+                        "width": 7,
+                        "height": 7,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-8"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 10,
+                        "y": 8,
+                        "width": 3,
+                        "height": 3,
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-2"
@@ -821,10 +1368,10 @@
                     {
                       "kind": "GridLayoutItem",
                       "spec": {
-                        "x": 12,
-                        "y": 16,
-                        "width": 12,
-                        "height": 8,
+                        "x": 10,
+                        "y": 11,
+                        "width": 3,
+                        "height": 3,
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-3"
@@ -835,12 +1382,25 @@
                       "kind": "GridLayoutItem",
                       "spec": {
                         "x": 0,
-                        "y": 24,
-                        "width": 12,
+                        "y": 14,
+                        "width": 17,
                         "height": 8,
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-7"
+                          "name": "panel-10"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 17,
+                        "y": 14,
+                        "width": 7,
+                        "height": 8,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-5"
                         }
                       }
                     }
