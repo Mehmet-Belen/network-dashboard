@@ -3,7 +3,7 @@
   "kind": "Dashboard",
   "metadata": {
     "name": "adctqdv",
-    "generation": 48,
+    "generation": 65,
     "creationTimestamp": "2026-05-06T19:43:09Z",
     "labels": {},
     "annotations": {}
@@ -93,6 +93,7 @@
               },
               "fieldConfig": {
                 "defaults": {
+                  "displayName": "Throughput",
                   "unit": "Mbps",
                   "min": 0,
                   "thresholds": {
@@ -464,11 +465,322 @@
           }
         }
       },
+      "panel-13": {
+        "kind": "Panel",
+        "spec": {
+          "id": 13,
+          "title": "Inbound / Outbound Traffic",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "influxdb",
+                      "version": "v0",
+                      "spec": {
+                        "query": "from(bucket: \"network_stats\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"network_traffic\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"bytes\")\r\n  |> filter(fn: (r) => r[\"source_ip\"] =~ /^192\\.168\\.|^10\\.|^172\\./)\r\n  |> group()\r\n  |> aggregateWindow(every: v.windowPeriod, fn: sum, createEmpty: false)\r\n  |> yield(name: \"Upload\")"
+                      },
+                      "labels": {
+                        "grafana.app/export-label": "influxdb-1"
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "influxdb",
+                      "version": "v0",
+                      "spec": {
+                        "query": "from(bucket: \"network_stats\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"network_traffic\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"bytes\")\r\n  |> filter(fn: (r) => r[\"dest_ip\"] =~ /^192\\.168\\.|^10\\.|^172\\./)\r\n  |> group()\r\n  |> aggregateWindow(every: v.windowPeriod, fn: sum, createEmpty: false)\r\n  |> yield(name: \"Download\")"
+                      },
+                      "labels": {
+                        "grafana.app/export-label": "influxdb-1"
+                      }
+                    },
+                    "refId": "B",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "13.0.1",
+            "spec": {
+              "options": {
+                "annotations": {
+                  "clustering": -1,
+                  "multiLane": false
+                },
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "single",
+                  "sort": "none"
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "displayName": "${__series.name}",
+                  "unit": "decbytes",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      },
+                      {
+                        "value": 80,
+                        "color": "red"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 25,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "smooth",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "auto",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "normal"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byFrameRefID",
+                      "options": "A"
+                    },
+                    "properties": [
+                      {
+                        "id": "displayName",
+                        "value": "Upload"
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byFrameRefID",
+                      "options": "B"
+                    },
+                    "properties": [
+                      {
+                        "id": "displayName",
+                        "value": "Download"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "panel-14": {
+        "kind": "Panel",
+        "spec": {
+          "id": 14,
+          "title": "Network Packet Geolocation Radar",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "influxdb",
+                      "version": "v0",
+                      "spec": {
+                        "query": "from(bucket: \"network_stats\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"network_traffic\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"bytes\" or r[\"_field\"] == \"latitude\" or r[\"_field\"] == \"longitude\")\r\n  |> pivot(rowKey:[\"_time\", \"dest_ip\", \"service\"], columnKey: [\"_field\"], valueColumn: \"_value\")\r\n  |> filter(fn: (r) => exists r.latitude and exists r.longitude and exists r.bytes)\r\n  |> group() \r\n  |> keep(columns: [\"_time\", \"dest_ip\", \"service\", \"latitude\", \"longitude\", \"bytes\"])"
+                      },
+                      "labels": {
+                        "grafana.app/export-label": "influxdb-1"
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "geomap",
+            "version": "13.0.1",
+            "spec": {
+              "options": {
+                "basemap": {
+                  "config": {},
+                  "name": "Layer 0",
+                  "noRepeat": false,
+                  "type": "default"
+                },
+                "controls": {
+                  "mouseWheelZoom": true,
+                  "showAttribution": true,
+                  "showDebug": false,
+                  "showMeasure": false,
+                  "showScale": false,
+                  "showZoom": true
+                },
+                "layers": [
+                  {
+                    "config": {
+                      "showLegend": true,
+                      "style": {
+                        "color": {
+                          "field": "bytes",
+                          "fixed": "dark-green"
+                        },
+                        "opacity": 0.8,
+                        "rotation": {
+                          "fixed": 0,
+                          "max": 360,
+                          "min": -360,
+                          "mode": "mod"
+                        },
+                        "size": {
+                          "field": "bytes",
+                          "fixed": 5,
+                          "max": 15,
+                          "min": 2
+                        },
+                        "symbol": {
+                          "fixed": "img/icons/marker/circle.svg",
+                          "mode": "fixed"
+                        },
+                        "symbolAlign": {
+                          "horizontal": "center",
+                          "vertical": "center"
+                        },
+                        "textConfig": {
+                          "fontSize": 12,
+                          "offsetX": 0,
+                          "offsetY": 0,
+                          "textAlign": "center",
+                          "textBaseline": "middle"
+                        }
+                      }
+                    },
+                    "location": {
+                      "mode": "auto"
+                    },
+                    "name": "Layer 1",
+                    "tooltip": true,
+                    "type": "markers"
+                  }
+                ],
+                "tooltip": {
+                  "mode": "details"
+                },
+                "view": {
+                  "allLayers": true,
+                  "dashboardVariable": false,
+                  "id": "fit",
+                  "lat": 0,
+                  "lon": 0,
+                  "noRepeat": false,
+                  "zoom": 15
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "decbytes",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      },
+                      {
+                        "value": 1000000,
+                        "color": "yellow"
+                      },
+                      {
+                        "value": 5000000,
+                        "color": "red"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "custom": {
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    }
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
       "panel-2": {
         "kind": "Panel",
         "spec": {
           "id": 2,
-          "title": "Throughput ",
+          "title": "Throughput (Last 5 Seconds)",
           "description": "",
           "links": [],
           "data": {
@@ -558,7 +870,7 @@
         "kind": "Panel",
         "spec": {
           "id": 3,
-          "title": "Mean Packet Count (Last 30 Seconds)",
+          "title": "Mean Packet Count ",
           "description": "",
           "links": [],
           "data": {
@@ -727,7 +1039,7 @@
         "kind": "Panel",
         "spec": {
           "id": 5,
-          "title": "New panel",
+          "title": "Total Traffic and IP's",
           "description": "",
           "links": [],
           "data": {
@@ -830,7 +1142,7 @@
         "kind": "Panel",
         "spec": {
           "id": 6,
-          "title": "New panel",
+          "title": "Service Distribution",
           "description": "",
           "links": [],
           "data": {
@@ -974,6 +1286,7 @@
               },
               "fieldConfig": {
                 "defaults": {
+                  "displayName": "Ping",
                   "unit": "ms",
                   "thresholds": {
                     "mode": "absolute",
@@ -1090,6 +1403,7 @@
               },
               "fieldConfig": {
                 "defaults": {
+                  "displayName": "Packet Loss Status",
                   "min": 0,
                   "max": 1,
                   "thresholds": {
@@ -1216,7 +1530,7 @@
               "fieldConfig": {
                 "defaults": {
                   "displayName": "${__field.labels.service}",
-                  "unit": "bytes",
+                  "unit": "decbytes",
                   "color": {
                     "mode": "palette-classic"
                   },
@@ -1383,7 +1697,7 @@
                       "spec": {
                         "x": 0,
                         "y": 14,
-                        "width": 17,
+                        "width": 15,
                         "height": 8,
                         "element": {
                           "kind": "ElementReference",
@@ -1394,13 +1708,39 @@
                     {
                       "kind": "GridLayoutItem",
                       "spec": {
-                        "x": 17,
+                        "x": 15,
                         "y": 14,
-                        "width": 7,
+                        "width": 9,
                         "height": 8,
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-5"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 0,
+                        "y": 22,
+                        "width": 12,
+                        "height": 8,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-13"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 12,
+                        "y": 22,
+                        "width": 7,
+                        "height": 8,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-14"
                         }
                       }
                     }
