@@ -241,6 +241,42 @@ def health_monitor():
             
         time.sleep(1)
 
+def wifi_monitor():
+    """Arka planda periyodik olarak Wi-Fi sinyal gücünü ölçer (Zorlu Tarama ile)."""
+    import subprocess
+    import re
+    while True:
+        try:
+            # Zorlu tarama (Active Scan) tetikle. Bu komut Windows'u etraftaki ağları aramaya zorlar, 
+            # böylece 'show interfaces' önbelleği güncellenir.
+            subprocess.run(["netsh", "wlan", "show", "networks", "mode=bssid"], creationflags=subprocess.CREATE_NO_WINDOW if hasattr(subprocess, 'CREATE_NO_WINDOW') else 0)
+            
+            # Güncellenmiş veriyi al
+            output = subprocess.check_output(["netsh", "wlan", "show", "interfaces"], encoding="utf-8", errors="ignore", creationflags=subprocess.CREATE_NO_WINDOW if hasattr(subprocess, 'CREATE_NO_WINDOW') else 0)
+            # Öncelikle doğrudan RSSI değerini çekmeye çalışalım (dBm cinsinden, negatif)
+            rssi_match = re.search(r"(?:Rssi|RSSI)\s*:\s*(-?\d+)", output)
+            if rssi_match:
+                signal_dbm = int(rssi_match.group(1))
+            else:
+                # Eğer RSSI satırı yoksa (eski Windows), Signal %'sinden yaklaşık dBm hesapla
+                signal_match = re.search(r"(?:Signal|Sinyal)\s*:\s*(\d+)%", output)
+                if signal_match:
+                    quality = int(signal_match.group(1))
+                    signal_dbm = (quality / 2) - 100
+                else:
+                    signal_dbm = None
+                    
+            if signal_dbm is not None:
+                wifi_point = Point("network_wifi") \
+                    .tag("interface", "Wi-Fi") \
+                    .field("signal_dbm", float(signal_dbm))
+                write_api.write(bucket=bucket, record=wifi_point)
+        except Exception as e:
+            pass
+        
+        # Her 30 saniyede bir çalıştır (Ağ pingini fazla bozmamak için)
+        time.sleep(30)
+
 def get_stats():
     """app.py buradan okuyacak."""
     with lock:
@@ -273,6 +309,9 @@ def start_capture(interface=None):
 
     health_thread = threading.Thread(target=health_monitor, daemon=True)
     health_thread.start()
+
+    wifi_thread = threading.Thread(target=wifi_monitor, daemon=True)
+    wifi_thread.start()
 
     if interface is None:
         interface = get_active_interface()
