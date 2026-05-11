@@ -1,0 +1,118 @@
+# -------------------------------------------------------------------
+# Proje: Network Anomaly Detection (IoT/IoMT)
+# Mimari: Production-Ready Microservices
+# -------------------------------------------------------------------
+
+networks:
+  monitoring_net:
+    driver: bridge
+
+volumes:
+  influxdb-data:
+  grafana-data:
+
+services:
+  # -------------------------------------
+  # 1. VERİTABANI: InfluxDB
+  # -------------------------------------
+  influxdb:
+    image: influxdb:2.7
+    container_name: influx_db_core
+    restart: unless-stopped
+    ports:
+      - "${INFLUX_PORT:-8086}:8086"
+    networks:
+      - monitoring_net
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=${INFLUX_USER}
+      - DOCKER_INFLUXDB_INIT_PASSWORD=${INFLUX_PASS}
+      - DOCKER_INFLUXDB_INIT_ORG=${INFLUX_ORG}
+      - DOCKER_INFLUXDB_INIT_BUCKET=${INFLUX_BUCKET}
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUX_TOKEN}
+    volumes:
+      - influxdb-data:/var/lib/influxdb2
+    # SENIOR DOKUNUŞU 1: Healthcheck (Sistem gerçekten hazır mı?)
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8086/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # SENIOR DOKUNUŞU 2: Log Rotasyonu (Harddiski şişirip sistemi çökertmemek için)
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # -------------------------------------
+  # 2. GÖRSELLEŞTİRME: Grafana
+  # -------------------------------------
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana_dashboard
+    restart: unless-stopped
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    networks:
+      - monitoring_net
+    depends_on:
+      influxdb:
+        # SENIOR DOKUNUŞU 3: Sadece açılmasını beklemez, InfluxDB "Sağlıklı" olana kadar Grafana'yı bekletir
+        condition: service_healthy 
+    volumes:
+      - grafana-data:/var/lib/grafana
+      # SENIOR DOKUNUŞU 4: :ro (Read-Only). Konteyner bu dosyaları sadece okuyabilir, bozamaz. (Güvenlik)
+      - ./grafana/provisioning/datasources/datasource.yaml:/etc/grafana/provisioning/datasources/datasource.yaml:ro
+      - ./grafana/provisioning/dashboards/dashboard.yaml:/etc/grafana/provisioning/dashboards/dashboard.yaml:ro
+      - ./grafana/dashboards/grafana_dashboard.json:/etc/grafana/provisioning/dashboards/grafana_dashboard.json:ro
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # -------------------------------------
+  # 3. BACKEND: Python Packet Capture
+  # -------------------------------------
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: python_packet_capture
+    restart: on-failure
+    network_mode: "host" # KRİTİK: Paket yakalamak için host ağı zorunlu
+    depends_on:
+      influxdb:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      - INFLUX_URL=http://127.0.0.1:${INFLUX_PORT:-8086}
+      - INFLUXDB_TOKEN=${INFLUX_TOKEN}
+      - INFLUXDB_ORG=${INFLUX_ORG}
+      - INFLUXDB_BUCKET=${INFLUX_BUCKET}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # -------------------------------------
+  # 4. FRONTEND: React Dashboard
+  # -------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: react_ui
+    restart: unless-stopped
+    ports:
+      - "${REACT_PORT:-3001}:3001"
+    networks:
+      - monitoring_net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

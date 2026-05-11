@@ -74,12 +74,20 @@ def process_packet(packet):
         proto_name = "ICMP"
 
     # Portlardan Servis Tahmini (Deep Packet Inspection Lite)
-    if dst_port == "443" or src_port == "443":
-        service = "HTTPS"
-    elif dst_port == "80" or src_port == "80":
-        service = "HTTP"
-    elif dst_port == "53" or src_port == "53":
-        service = "DNS"
+    COMMON_PORTS = {
+        "80": "HTTP", "443": "HTTPS", "53": "DNS", 
+        "22": "SSH", "21": "FTP", "25": "SMTP", 
+        "110": "POP3", "143": "IMAP", "3306": "MySQL", 
+        "5432": "PostgreSQL", "6379": "Redis",
+        "8080": "HTTP-ALT", "8443": "HTTPS-ALT",
+        "3389": "RDP", "123": "NTP", "445": "SMB", "137": "NetBIOS",
+        "5353": "mDNS", "23": "Telnet", "161": "SNMP"
+    }
+
+    if dst_port in COMMON_PORTS:
+        service = COMMON_PORTS[dst_port]
+    elif src_port in COMMON_PORTS:
+        service = COMMON_PORTS[src_port]
     elif proto_name in ["TCP", "UDP"]:
         service = f"Unknown (Port {dst_port})"
 
@@ -248,24 +256,32 @@ def get_stats():
 
 def get_active_interface():
     """Aktif ağ arayüzünü otomatik bulur."""
-    from scapy.arch.windows import get_windows_if_list
+    import sys
     import socket
+    
+    if sys.platform == "win32":
+        from scapy.arch.windows import get_windows_if_list
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect(("8.8.8.8", 80))
+            local_ip = s.getsockname()[0]
+            s.close()
+        except:
+            return "Wi-Fi"
 
-    try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.connect(("8.8.8.8", 80))
-        local_ip = s.getsockname()[0]
-        s.close()
-    except:
+        for iface in get_windows_if_list():
+            for addr in iface.get("ips", []):
+                if addr == local_ip:
+                    print(f"Aktif arayüz bulundu: {iface['name']} ({local_ip})")
+                    return iface["name"]
         return "Wi-Fi"
-
-    for iface in get_windows_if_list():
-        for addr in iface.get("ips", []):
-            if addr == local_ip:
-                print(f"Aktif arayüz bulundu: {iface['name']} ({local_ip})")
-                return iface["name"]
-
-    return "Wi-Fi"
+    else:
+        from scapy.config import conf
+        try:
+            print(f"Linux/Docker aktif arayüz bulundu: {conf.iface.name}")
+            return conf.iface.name
+        except AttributeError:
+            return "eth0"
 
 def start_capture(interface=None):
     stats_thread = threading.Thread(target=compute_stats, daemon=True)
